@@ -20,58 +20,103 @@ export function createTask(
   dueDate: string,
   topic: string,
   status: TaskStatus
-) {
-  const now = new Date().toISOString();
+): Promise<Task> {
+  return new Promise((resolve, reject) => {
+    const now = new Date().toISOString();
 
-  const statement = db.prepare(`
-    INSERT INTO tasks (
-      title,
-      description,
-      due_date,
-      topic,
-      status,
-      archived_at,
-      created_at,
-      updated_at
-    )
-    VALUES (?, ?, ?, ?, ?, NULL, ?, ?)
-  `);
+    const sql = `
+      INSERT INTO tasks (
+        title,
+        description,
+        due_date,
+        topic,
+        status,
+        archived_at,
+        created_at,
+        updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, NULL, ?, ?)
+    `;
 
-  const result = statement.run(
-    title,
-    description,
-    dueDate,
-    topic,
-    status,
-    now,
-    now
-  );
+    db.run(
+      sql,
+      [
+        title,
+        description,
+        dueDate,
+        topic,
+        status,
+        now,
+        now,
+      ],
+      function (error) {
+        if (error) {
+          reject(error);
+          return;
+        }
 
-  return db
-    .prepare("SELECT * FROM tasks WHERE id = ?")
-    .get(result.lastInsertRowid) as Task;
+        getTaskById(this.lastID)
+          .then((task) => {
+            if (!task) {
+              reject(new Error("Task was created but could not be found."));
+              return;
+            }
+
+            resolve(task);
+          })
+          .catch(reject);
+      }
+    );
+  });
 }
 
-export function getTasks(includeArchived = false) {
-  if (includeArchived) {
-    return db
-      .prepare("SELECT * FROM tasks ORDER BY due_date ASC")
-      .all() as Task[];
-  }
+export function getTasks(
+  includeArchived = false
+): Promise<Task[]> {
+  return new Promise((resolve, reject) => {
+    let sql = `
+      SELECT *
+      FROM tasks
+    `;
 
-  return db
-    .prepare(`
-      SELECT * FROM tasks
-      WHERE archived_at IS NULL
+    if (!includeArchived) {
+      sql += `
+        WHERE archived_at IS NULL
+      `;
+    }
+
+    sql += `
       ORDER BY due_date ASC
-    `)
-    .all() as Task[];
+    `;
+
+    db.all(sql, [], (error, rows) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve(rows as Task[]);
+    });
+  });
 }
 
-export function getTaskById(id: number) {
-  return db
-    .prepare("SELECT * FROM tasks WHERE id = ?")
-    .get(id) as Task | undefined;
+export function getTaskById(
+  id: number
+): Promise<Task | undefined> {
+  return new Promise((resolve, reject) => {
+    db.get(
+      "SELECT * FROM tasks WHERE id = ?",
+      [id],
+      (error, row) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(row as Task | undefined);
+      }
+    );
+  });
 }
 
 export function updateTask(
@@ -81,40 +126,74 @@ export function updateTask(
   dueDate: string,
   topic: string,
   status: TaskStatus
-) {
-  const now = new Date().toISOString();
+): Promise<Task | undefined> {
+  return new Promise((resolve, reject) => {
+    const now = new Date().toISOString();
 
-  db.prepare(`
-    UPDATE tasks
-    SET
-      title = ?,
-      description = ?,
-      due_date = ?,
-      topic = ?,
-      status = ?,
-      updated_at = ?
-    WHERE id = ?
-  `).run(
-    title,
-    description,
-    dueDate,
-    topic,
-    status,
-    now,
-    id
-  );
+    const sql = `
+      UPDATE tasks
+      SET
+        title = ?,
+        description = ?,
+        due_date = ?,
+        topic = ?,
+        status = ?,
+        updated_at = ?
+      WHERE id = ?
+    `;
 
-  return getTaskById(id);
+    db.run(
+      sql,
+      [
+        title,
+        description,
+        dueDate,
+        topic,
+        status,
+        now,
+        id,
+      ],
+      function (error) {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        getTaskById(id)
+          .then(resolve)
+          .catch(reject);
+      }
+    );
+  });
 }
 
-export function archiveTask(id: number) {
-  const now = new Date().toISOString();
+export function archiveTask(
+  id: number
+): Promise<Task | undefined> {
+  return new Promise((resolve, reject) => {
+    const now = new Date().toISOString();
 
-  db.prepare(`
-    UPDATE tasks
-    SET archived_at = ?, updated_at = ?
-    WHERE id = ?
-  `).run(now, now, id);
+    const sql = `
+      UPDATE tasks
+      SET
+        archived_at = ?,
+        updated_at = ?
+      WHERE id = ?
+    `;
 
-  return getTaskById(id);
+    db.run(
+      sql,
+      [now, now, id],
+      function (error) {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        getTaskById(id)
+          .then(resolve)
+          .catch(reject);
+      }
+    );
+  });
 }

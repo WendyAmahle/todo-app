@@ -31,7 +31,7 @@ export async function GET(
       );
     }
 
-    const task = getTaskById(taskId);
+    const task = await getTaskById(taskId);
 
     if (!task) {
       return NextResponse.json(
@@ -66,7 +66,7 @@ export async function PUT(
       );
     }
 
-    const existingTask = getTaskById(taskId);
+    const existingTask = await getTaskById(taskId);
 
     if (!existingTask) {
       return NextResponse.json(
@@ -85,7 +85,13 @@ export async function PUT(
       status,
     } = body;
 
-    if (!title || !description || !dueDate || !topic || !status) {
+    if (
+      !title ||
+      !description ||
+      !dueDate ||
+      !topic ||
+      !status
+    ) {
       return NextResponse.json(
         { error: "All task fields are required" },
         { status: 400 }
@@ -102,7 +108,7 @@ export async function PUT(
       );
     }
 
-    const updatedTask = updateTask(
+    const updatedTask = await updateTask(
       taskId,
       title,
       description,
@@ -137,7 +143,7 @@ export async function PATCH(
       );
     }
 
-    const existingTask = getTaskById(taskId);
+    const existingTask = await getTaskById(taskId);
 
     if (!existingTask) {
       return NextResponse.json(
@@ -146,7 +152,7 @@ export async function PATCH(
       );
     }
 
-    const archivedTask = archiveTask(taskId);
+    const archivedTask = await archiveTask(taskId);
 
     return NextResponse.json(archivedTask);
   } catch (error) {
