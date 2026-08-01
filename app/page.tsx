@@ -307,8 +307,15 @@ async function archiveTask(taskId: number) {
           <p>No tasks yet.</p>
         ) : (
           <div>
-            {sortedTasks.map((task) => (
+            {sortedTasks.map((task) => {
+              const isOverdue =
+              new Date(task.due_date) < new Date() &&
+              task.status !== "Complete";
+              
+              return(
               <article key={task.id} style={styles.task}>
+
+          
                 <h3>{task.title}</h3>
 
                 <p>{task.description}</p>
@@ -325,6 +332,12 @@ async function archiveTask(taskId: number) {
                   <strong>Status:</strong> {task.status}
                 </p>
 
+                {isOverdue && (
+                  <p style={styles.overdue}>
+                    Overdue
+                  </p>
+                )}
+
                 <button
                   onClick={() => startEditing(task)}
                   style={styles.button}
@@ -339,7 +352,9 @@ async function archiveTask(taskId: number) {
                   Archive 
                 </button>
               </article>
-            ))}
+              );
+            })}
+
           </div>
         )}
       </section>
@@ -398,5 +413,10 @@ const styles = {
   task: {
     borderTop: "1px solid #ddd",
     padding: "15px 0",
+  },
+
+  overdue: {
+    fontWeight: "bold",
+    marginTop: "10px",
   },
 };
