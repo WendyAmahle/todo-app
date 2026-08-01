@@ -262,6 +262,33 @@ async function archiveTask(taskId: number) {
           : "My Tasks"}
         </h2>
 
+        <label>
+          Sort by:{" "}
+          <select
+            value={sortBy}
+            onChange={(event) =>
+            setSortBy(
+              event.target.value as
+              | "topic"
+              | "status"
+              | "due_date"
+              )
+            }
+          >
+          <option value="due_date">
+            Due Date
+            </option>
+
+            <option value="topic">
+              Topic
+            </option>
+
+            <option value="status">
+              Status
+            </option>
+          </select>
+        </label>
+
         <button
         onClick={() => {
           setShowArchived(!showArchived);
