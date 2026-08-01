@@ -40,7 +40,11 @@ export default function Home() {
     try {
       setLoading(true);
 
-      const response = await fetch("/api/tasks");
+      const response = await fetch(
+        showArchived
+        ? "/api/tasks?includeArchived=true"
+        : "/api/tasks"
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch tasks");
@@ -58,7 +62,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [showArchived]);
 
   const sortedTasks = [...tasks].sort((a, b) => {
   if (sortBy === "topic") {
@@ -150,6 +154,23 @@ function startEditing(task: Task) {
   });
 }
 
+async function archiveTask(taskId: number) {
+  try {
+    const response = await fetch(`/api/tasks/${taskId}`, {
+      method: "PATCH",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to archive task");
+    }
+
+    await fetchTasks();
+  } catch (error) {
+    console.error("Error archiving task:", error);
+    alert("Failed to archive task");
+  }
+}
+
   return (
     <main style={styles.container}>
       <h1 style={styles.heading}>My Todo App</h1>
@@ -235,7 +256,23 @@ function startEditing(task: Task) {
       </section>
 
       <section style={styles.card}>
-        <h2>My Tasks</h2>
+        <h2>
+          {showArchived
+          ? "Archived Tasks"
+          : "My Tasks"}
+        </h2>
+
+        <button
+        onClick={() => {
+          setShowArchived(!showArchived);
+        }}
+        style={styles.button}
+        >
+          {showArchived
+          ? "View Active Tasks"
+          : "View Archived Tasks"}
+
+        </button>
 
         {loading ? (
           <p>Loading tasks...</p>
@@ -266,6 +303,13 @@ function startEditing(task: Task) {
                   style={styles.button}
                   >
                   Edit
+                </button>
+
+                <button
+                  onClick={() => archiveTask(task.id)}
+                  style={styles.button}
+                >
+                  Archive 
                 </button>
               </article>
             ))}
