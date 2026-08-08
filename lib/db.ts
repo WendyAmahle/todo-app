@@ -10,7 +10,9 @@ if (!fs.existsSync(dataDirectory)) {
   fs.mkdirSync(dataDirectory, { recursive: true });
 }
 
-const dbPath = path.join(dataDirectory, "todos.db");
+const dbPath =
+  process.env.TODO_DB_PATH ||
+  path.join(dataDirectory, "todos.db");
 
 const db = new sqlite3.Database(dbPath, (error) => {
   if (error) {
